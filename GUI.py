@@ -1,14 +1,20 @@
 import tkinter as tk
 from tkinter import messagebox
+from functools import partial
 
 from Game import Game
+
+
+class Tile:
+    def __init__(self, button, row, col):
+        self.button = button
+        self.row = row
+        self.col = col
 
 
 class GUI(tk.Tk):
     def __init__(self):
         tk.Tk.__init__(self)
-
-        self.game = Game(3, 3, 3)
 
         self.title("Minesweeper")
         settings_frame = tk.Frame(self)
@@ -21,52 +27,73 @@ class GUI(tk.Tk):
         self.num_columns_field = tk.Entry(settings_frame)
         self.num_mines_field = tk.Entry(settings_frame)
 
-        self.num_rows_field.insert(tk.END, "3")
-        self.num_columns_field.insert(tk.END, "5")
-        self.num_mines_field.insert(tk.END, "4")
+        self.num_rows_field.insert(tk.END, "15")
+        self.num_columns_field.insert(tk.END, "30")
+        self.num_mines_field.insert(tk.END, "50")
 
         self.num_rows_field.grid(row=0, column=1)
         self.num_columns_field.grid(row=1, column=1)
         self.num_mines_field.grid(row=2, column=1)
 
-        self.t1 = tk.Entry(settings_frame)
-        self.t2 = tk.Entry(settings_frame)
-        self.t1.grid(row=3)
-        self.t2.grid(row=3, column=1)
-
         settings_frame.pack()
-
         tk.Button(self, text="Play", command=lambda: self.parse_input_play_new_game()).pack()
 
-        tk.Button(self, text="Test", command=lambda: self.test()).pack()
+        self.game, self.game_frame, self.game_tiles = None, None, None
+        self.parse_input_play_new_game()
+        self.draw_grid()
 
         self.mainloop()
-
-
-    def test(self):
-        self.game.click_tile(row=int(self.t1.get()), col=int(self.t2.get()))
-        print("-----")
-        print(self.game.game_grid)
-        print(self.game.revealed)
-        print(self.game.game_over)
-        print()
 
 
     def parse_input_play_new_game(self):
         game_args = [self.num_rows_field.get(), self.num_columns_field.get(), self.num_mines_field.get()]
 
         if not all([x.isdigit() for x in game_args]):
-            return error_msg("Those aren't numbers")
+            return error_msg("Hmm those aren't numbers...")
 
         game_args = [int(x) for x in game_args]
         if not all([x > 1 for x in game_args]):
-            return error_msg("Hmm that probably won't work very well")
+            return error_msg("Hmm that probably won't be a very good game...")
 
-        self.new_game(*game_args)
+        self.game = Game(*game_args)
+        self.draw_grid()
 
 
-    def new_game(self, num_rows, num_columns, num_mines):
-        self.game = Game(num_rows, num_columns, num_mines)
+    def draw_grid(self):
+        if self.game_frame is not None:
+            self.game_frame.destroy()
+        self.game_frame = tk.Frame(self)
+
+        self.game_tiles = []
+        for r in range(self.game.num_rows):
+            for c in range(self.game.num_columns):
+                click_action = partial(self.click_tile, r, c)
+                button = tk.Button(self.game_frame, text="  ", command=click_action)
+                button.grid(row=r, column=c)
+                self.game_tiles.append(Tile(button, r, c))
+        self.game_frame.pack()
+        self.update_grid()
+
+
+    def update_grid(self):
+        for tile in self.game_tiles:
+            tile_type = self.game.get_tile_type(tile.row, tile.col)
+
+            if tile_type == self.game.UNCHECKED:
+                tile.button.config(text="   ")
+            elif tile_type == self.game.EMPTY:
+                tile.button.config(text="   ")
+                tile.button.config(state="disabled", relief="sunken")
+            else:
+                tile.button.config(text=tile_type)
+
+
+
+
+    def click_tile(self, row, col):
+        game_over = self.game.click_tile(row, col)
+        print(game_over)
+        self.update_grid()
 
 
 def error_msg(error):
