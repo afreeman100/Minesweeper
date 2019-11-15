@@ -88,12 +88,22 @@ class GUI(tk.Tk):
                 tile.button.config(text=tile_type)
 
 
-
-
     def click_tile(self, row, col):
         game_over = self.game.click_tile(row, col)
-        print(game_over)
         self.update_grid()
+        if game_over:
+            self.end_game()
+
+
+    def end_game(self):
+        game_over_msg(self.game.won)
+        for tile in self.game_tiles:
+            tile.button.config(state="disabled")
+
+
+def game_over_msg(won):
+    msg = "You won!" if won else "You lose :("
+    tk.messagebox.showinfo("Game over", msg)
 
 
 def error_msg(error):
