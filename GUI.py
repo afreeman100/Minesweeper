@@ -55,6 +55,9 @@ class GUI(tk.Tk):
         if not all([x > 1 for x in game_args]):
             return error_msg("Hmm that probably won't be a very good game...")
 
+        if game_args[2] >= game_args[1] * game_args[0]:
+            return error_msg("Hmm that's a few too many mines...")
+
         self.game = Game(*game_args)
         self.draw_grid()
 
